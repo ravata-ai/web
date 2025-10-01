@@ -161,8 +161,7 @@ The website is ready for deployment to any static hosting service:
 ## 📞 Contact
 
 - **Email**: hello@airavata.dev
-- **Phone**: +1 (555) 123-4567
-- **Website**: https://airavata.dev
+- **Website**: https://airavata.app
 
 ## 📄 License
 
