@@ -26,28 +26,83 @@ web-page/
 ├── index.html          # Main landing page
 ├── styles.css          # CSS styling and responsive design
 ├── script.js           # JavaScript functionality and interactions
-├── server.js           # Node.js server for waitlist handling
+├── server.js           # Node.js server for contact form handling
 ├── package.json         # Node.js dependencies and scripts
-├── waitlist.json       # JSON file storing waitlist submissions
 ├── robots.txt          # SEO robots file
 ├── sitemap.xml         # XML sitemap for search engines
 └── README.md           # Project documentation
 ```
 
-## 📝 Waitlist Functionality
+## 📝 Contact Form Functionality
 
-The website includes a fully functional waitlist system:
+The website includes a fully functional contact form system:
 
-- **Form Validation**: Client-side validation for name and email
-- **JSON Storage**: All submissions are stored in `waitlist.json`
-- **Duplicate Prevention**: Prevents duplicate email submissions
+- **Form Validation**: Client-side validation for name, email, and message
+- **Email Integration**: All submissions are sent to contact@airavata.app
 - **Real-time Feedback**: Success/error notifications for users
-- **Admin Stats**: API endpoint to view waitlist statistics
+- **Secure Submission**: Server-side validation and email sending
 
 ### API Endpoints
 
-- `POST /api/waitlist` - Submit waitlist form
-- `GET /api/waitlist/stats` - Get waitlist statistics (admin)
+- `POST /api/contact` - Submit contact form
+
+### Email Configuration
+
+The server supports multiple free email services. Choose one option:
+
+#### Option 1: Gmail (Free - Recommended)
+```bash
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+```
+
+Setup steps:
+1. Enable 2-factor authentication on your Gmail account
+2. Generate an App Password (not your regular password)
+3. Use the App Password in EMAIL_PASS
+
+#### Option 2: SendGrid (Free tier: 100 emails/day)
+1. Sign up at [SendGrid](https://sendgrid.com)
+2. Get your API key from Settings → API Keys
+3. Uncomment the SendGrid configuration in server.js
+4. Set environment variable:
+```bash
+SENDGRID_API_KEY=your-sendgrid-api-key
+```
+
+#### Option 3: Mailgun (Free tier: 5,000 emails/month)
+1. Sign up at [Mailgun](https://mailgun.com)
+2. Get SMTP credentials from your dashboard
+3. Uncomment the Mailgun configuration in server.js
+4. Set environment variables:
+```bash
+MAILGUN_SMTP_USER=your-mailgun-smtp-user
+MAILGUN_SMTP_PASS=your-mailgun-smtp-password
+```
+
+#### Option 4: Any SMTP Server
+You can use any SMTP server by modifying the transporter configuration in server.js.
+
+### Setting Environment Variables
+
+#### For Local Development:
+Create a `.env` file in the project root:
+```bash
+# Email Configuration
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+
+# Server Configuration
+PORT=3000
+```
+
+**Note**: Make sure to add `.env` to your `.gitignore` file to keep your credentials secure!
+
+#### For Production Deployment:
+- **Heroku**: Use `heroku config:set EMAIL_USER=your-email@gmail.com`
+- **Vercel**: Add environment variables in project settings
+- **Netlify**: Add environment variables in site settings
+- **Railway**: Add environment variables in project settings
 
 ## 🎨 Design Features
 
@@ -59,7 +114,7 @@ The website includes a fully functional waitlist system:
 
 ## 🚀 Getting Started
 
-### Option 1: Deploy to GitHub Pages (Recommended)
+### Option 1: Deploy to GitHub Pages (Recommended for Static Sites)
 
 1. **Create GitHub Repository**
    ```bash
@@ -72,12 +127,63 @@ The website includes a fully functional waitlist system:
 
 2. **Enable GitHub Pages**
    - Go to repository Settings → Pages
-   - Select "GitHub Actions" as source
+   - Select "Deploy from a branch" → main branch
    - Your site will be available at `https://YOUR-USERNAME.github.io/airavata-web-page/`
 
-3. **Configure Formspree** (Optional)
-   - Sign up at [Formspree.io](https://formspree.io)
-   - Update form action in `index.html` with your Formspree endpoint
+3. **Configure Contact Form with Formspree** (Free for GitHub Pages)
+   - Sign up at [Formspree.io](https://formspree.io) (free tier: 50 submissions/month)
+   - Create a new form and get your form ID
+   - Update the form action in `index.html`:
+     ```html
+     <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+     ```
+   - Update the success redirect URL in the hidden `_next` field
+   - Formspree will send emails to contact@airavata.app automatically
+
+### Alternative Solutions for GitHub Pages:
+
+#### Option A: Netlify Forms (Free)
+1. Deploy to [Netlify](https://netlify.com) instead of GitHub Pages
+2. Add `netlify` attribute to form: `<form netlify>`
+3. Netlify automatically handles form submissions
+4. Free tier: 100 submissions/month
+
+#### Option B: EmailJS (Free)
+1. Sign up at [EmailJS](https://emailjs.com)
+2. Connect your email service (Gmail, Outlook, etc.)
+3. Use JavaScript to send emails directly from the browser
+4. Free tier: 200 emails/month
+
+#### Option C: Netlify Functions (Free)
+1. Deploy to Netlify
+2. Create serverless functions for email handling
+3. Use the same Node.js code but as serverless functions
+4. Free tier: 125,000 function invocations/month
+
+## 🚀 Quick Setup for GitHub Pages + Formspree
+
+### Step-by-Step Guide:
+
+1. **Sign up for Formspree** (2 minutes)
+   - Go to [formspree.io](https://formspree.io)
+   - Sign up with your email
+   - Create a new form
+   - Copy your form ID (looks like `xpwgkqyz`)
+
+2. **Update your website** (1 minute)
+   - Replace `YOUR_FORM_ID` in `index.html` with your actual form ID
+   - Update the `_next` URL to your GitHub Pages URL
+
+3. **Deploy to GitHub Pages** (3 minutes)
+   - Push your code to GitHub
+   - Enable GitHub Pages in repository settings
+   - Your site is live!
+
+4. **Configure Formspree** (1 minute)
+   - In Formspree dashboard, set the email to `contact@airavata.app`
+   - Test the form - you'll receive emails instantly!
+
+**Total setup time: ~7 minutes** ⚡
 
 ### Option 2: Local Development with Server
 
@@ -95,7 +201,7 @@ The website includes a fully functional waitlist system:
 
 3. **Access the website**
    - Open `http://localhost:3000` in your browser
-   - Waitlist submissions will be stored in `waitlist.json`
+   - Contact form submissions will be sent to contact@airavata.app
 
 ### Option 3: Static Files Only
 
@@ -110,7 +216,7 @@ The website includes a fully functional waitlist system:
 
 2. **Access the website**
    - Open `http://localhost:8000` in your browser
-   - Note: Waitlist form requires Formspree configuration
+   - Note: Contact form requires server setup for email functionality
 
 ## 📱 Responsive Breakpoints
 
@@ -124,7 +230,7 @@ The website includes a fully functional waitlist system:
 2. **Features**: Six key benefits of the MCP platform
 3. **How It Works**: Three-step process explanation
 4. **Pricing**: Three-tier pricing structure
-5. **Contact**: Waitlist signup form with contact information
+5. **Contact**: Contact form with email integration
 
 ## 🔧 Customization
 

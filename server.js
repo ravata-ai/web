@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,23 +13,55 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Path to the JSON file for storing waitlist data
-const WAITLIST_FILE = path.join(__dirname, 'waitlist.json');
+// Email configuration - Using Gmail SMTP (free)
+const transporter = nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com',
+        pass: process.env.EMAIL_PASS || 'your-app-password'
+    }
+});
 
-// Initialize waitlist file if it doesn't exist
-if (!fs.existsSync(WAITLIST_FILE)) {
-    fs.writeFileSync(WAITLIST_FILE, JSON.stringify([], null, 2));
-}
+// Alternative: Use SendGrid (free tier: 100 emails/day)
+// const transporter = nodemailer.createTransporter({
+//     host: 'smtp.sendgrid.net',
+//     port: 587,
+//     secure: false,
+//     auth: {
+//         user: 'apikey',
+//         pass: process.env.SENDGRID_API_KEY || 'your-sendgrid-api-key'
+//     }
+// });
 
-// API endpoint to handle waitlist form submissions
-app.post('/api/waitlist', (req, res) => {
+// Alternative: Use Mailgun (free tier: 5,000 emails/month)
+// const transporter = nodemailer.createTransporter({
+//     host: 'smtp.mailgun.org',
+//     port: 587,
+//     secure: false,
+//     auth: {
+//         user: process.env.MAILGUN_SMTP_USER || 'your-mailgun-smtp-user',
+//         pass: process.env.MAILGUN_SMTP_PASS || 'your-mailgun-smtp-password'
+//     }
+// });
+
+// Verify email configuration
+transporter.verify((error, success) => {
+    if (error) {
+        console.log('Email configuration error:', error);
+    } else {
+        console.log('Email server is ready to send messages');
+    }
+});
+
+// API endpoint to handle contact form submissions
+app.post('/api/contact', async (req, res) => {
     try {
         const { name, email, company, message } = req.body;
 
         // Validate required fields
-        if (!name || !email) {
+        if (!name || !email || !message) {
             return res.status(400).json({
-                error: 'Name and email are required'
+                error: 'Name, email, and message are required'
             });
         }
 
@@ -39,57 +73,36 @@ app.post('/api/waitlist', (req, res) => {
             });
         }
 
-        // Read existing waitlist data
-        let waitlistData = [];
-        try {
-            const fileContent = fs.readFileSync(WAITLIST_FILE, 'utf8');
-            waitlistData = JSON.parse(fileContent);
-        } catch (error) {
-            console.error('Error reading waitlist file:', error);
-            waitlistData = [];
-        }
-
-        // Check if email already exists
-        const existingEntry = waitlistData.find(entry => entry.email === email);
-        if (existingEntry) {
-            return res.status(409).json({
-                error: 'Email already exists in waitlist',
-                message: 'You are already on our waitlist!'
-            });
-        }
-
-        // Create new waitlist entry
-        const newEntry = {
-            id: Date.now().toString(),
-            name: name.trim(),
-            email: email.trim().toLowerCase(),
-            company: company ? company.trim() : '',
-            message: message ? message.trim() : '',
-            timestamp: new Date().toISOString(),
-            ip: req.ip || req.connection.remoteAddress
+        // Email content
+        const mailOptions = {
+            from: process.env.EMAIL_USER || 'your-email@gmail.com',
+            to: 'contact@airavata.app',
+            subject: `New Contact Form Submission from ${name}`,
+            html: `
+                <h2>New Contact Form Submission</h2>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Company:</strong> ${company || 'Not provided'}</p>
+                <p><strong>Message:</strong></p>
+                <p>${message}</p>
+                <hr>
+                <p><small>Submitted on: ${new Date().toLocaleString()}</small></p>
+            `
         };
 
-        // Add to waitlist
-        waitlistData.push(newEntry);
+        // Send email
+        await transporter.sendMail(mailOptions);
 
-        // Write back to file
-        fs.writeFileSync(WAITLIST_FILE, JSON.stringify(waitlistData, null, 2));
-
-        console.log(`New waitlist entry: ${name} (${email})`);
+        console.log(`Contact form submission from: ${name} (${email})`);
 
         // Return success response
-        res.status(201).json({
+        res.status(200).json({
             success: true,
-            message: 'Successfully joined the waitlist!',
-            data: {
-                id: newEntry.id,
-                name: newEntry.name,
-                email: newEntry.email
-            }
+            message: 'Thank you for your message! We will get back to you soon.'
         });
 
     } catch (error) {
-        console.error('Error processing waitlist submission:', error);
+        console.error('Error processing contact form:', error);
         res.status(500).json({
             error: 'Internal server error',
             message: 'Something went wrong. Please try again.'
@@ -97,22 +110,6 @@ app.post('/api/waitlist', (req, res) => {
     }
 });
 
-// API endpoint to get waitlist statistics (for admin purposes)
-app.get('/api/waitlist/stats', (req, res) => {
-    try {
-        const fileContent = fs.readFileSync(WAITLIST_FILE, 'utf8');
-        const waitlistData = JSON.parse(fileContent);
-
-        res.json({
-            total: waitlistData.length,
-            recent: waitlistData.slice(-10), // Last 10 entries
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error('Error reading waitlist stats:', error);
-        res.status(500).json({ error: 'Failed to read waitlist data' });
-    }
-});
 
 // Serve the main HTML file
 app.get('/', (req, res) => {
@@ -122,7 +119,7 @@ app.get('/', (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`Airavata server running on port ${PORT}`);
-    console.log(`Waitlist data will be stored in: ${WAITLIST_FILE}`);
+    console.log(`Contact form submissions will be sent to: contact@airavata.app`);
 });
 
 // Graceful shutdown

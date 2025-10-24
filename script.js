@@ -43,10 +43,10 @@ document.addEventListener('DOMContentLoaded', function() {
         lastScrollTop = scrollTop;
     });
 
-    // Waitlist form handling for GitHub Pages
-    const waitlistForm = document.getElementById('waitlist-form');
-    if (waitlistForm) {
-        waitlistForm.addEventListener('submit', function(e) {
+    // Contact form handling for GitHub Pages (Formspree)
+    const contactForm = document.getElementById('contact-form');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
             // Validate form data before submission
             const formData = new FormData(this);
             const data = {
@@ -67,10 +67,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Joining...';
+            submitBtn.textContent = 'Sending...';
             submitBtn.disabled = true;
 
-            // Let the form submit naturally to Formspree
+            // Let Formspree handle the submission
             // The form will redirect to the success page
         });
     }
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for success parameter in URL (from Formspree redirect)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
-        showNotification('Successfully joined the waitlist! We\'ll be in touch soon.', 'success');
+        showNotification('Thank you for your message! We will get back to you soon.', 'success');
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -256,31 +256,13 @@ function validateForm(formData) {
         errors.push('Please enter a valid email address');
     }
 
+    if (!formData.message || formData.message.trim().length < 10) {
+        errors.push('Message must be at least 10 characters long');
+    }
+
     return errors;
 }
 
-// API integration (placeholder)
-async function submitWaitlist(data) {
-    try {
-        // Replace with actual API endpoint
-        const response = await fetch('/api/waitlist', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error submitting waitlist:', error);
-        throw error;
-    }
-}
 
 // Scroll to top functionality
 function scrollToTop() {
